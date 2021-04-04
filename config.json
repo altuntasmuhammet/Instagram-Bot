@@ -1,6 +1,7 @@
 {
     "driver_language": "'intl.accept_languages', 'en-US, en'",
-    "driver_path": "C:\\geckodriver.exe",
+    "driver_type": "ChromeDriver",
+    "driver_path": "./chromedriver",
     "headless": "true",
     "language": "en",
     "languages": {

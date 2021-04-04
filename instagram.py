@@ -2,7 +2,8 @@ from builtins import print
 
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from selenium.webdriver.chrome.options import Options as ChromeOptions
 from time import sleep
 from datetime import datetime
 import os
@@ -29,6 +30,7 @@ class Instagram():
         self.aktifKullanici = ""
         self.index = 1
         self.BASE_URL = "https://www.instagram.com/"
+        self.VALID_DRIVER_TYPES = ['ChromeDriver', 'FirefoxDriver']
         self.girisYap()
 
     def script(self):
@@ -1177,26 +1179,57 @@ class Instagram():
 
 
     def tarayiciBaslat(self):
+        if self.tarayiciTypeGetir() == 'FirefoxDriver':
+            self.tarayiciFirefoxBaslat()
+        elif self.tarayiciTypeGetir() == 'ChromeDriver':
+            self.tarayiciChromeBaslat()
+        else:
+            error = "Not valid 'driver_type', it must be one of {}".format(', '.join(self.VALID_DRIVER_TYPES))
+            self.uyariOlustur(error, 2)
+    
+    def tarayiciFirefoxBaslat(self):
         base_warnings = self.BASE_UYARI(metod=self.tarayiciBaslat, warnings=True)
         try:
             print(self.configGetir(base_warnings+"warning1"))
-            firefox_options = Options()
+            firefox_options = FirefoxOptions()
             headless=self.configGetir("headless")
             if headless=="false":
                 firefox_options.add_argument('--headless')
-            self.driver = webdriver.Firefox(firefox_profile=self.tarayiciDilDegistir(),options=firefox_options,executable_path=self.tarayiciPathGetir())
+            self.driver = webdriver.Firefox(firefox_profile=self.tarayiciFirefoxDilDegistir(),options=firefox_options,executable_path=self.tarayiciPathGetir())
+            self.driver.get(self.BASE_URL + 'accounts/login/')
+        except Exception as error:
+            self.uyariOlustur(str(self.configGetir(base_warnings+"warning2")).format(hata=str(error)),2)
+            exit()
+    
+    def tarayiciChromeBaslat(self):
+        base_warnings = self.BASE_UYARI(metod=self.tarayiciBaslat, warnings=True)
+        try:
+            print(self.configGetir(base_warnings+"warning1"))
+            chrome_options = ChromeOptions()
+            chrome_options = self.tarayiciChromeDilDegistir(chrome_options)
+            headless=self.configGetir("headless")
+            if headless=="false":
+                chrome_options.add_argument('--headless')
+            self.driver = webdriver.Chrome(options=chrome_options,executable_path=self.tarayiciPathGetir())
             self.driver.get(self.BASE_URL + 'accounts/login/')
         except Exception as error:
             self.uyariOlustur(str(self.configGetir(base_warnings+"warning2")).format(hata=str(error)),2)
             exit()
 
+    def tarayiciTypeGetir(self):
+        return self.configGetir("driver_type")
+
     def tarayiciPathGetir(self):
         return self.configGetir("driver_path")
 
-    def tarayiciDilDegistir(self):
+    def tarayiciFirefoxDilDegistir(self):
         profile = webdriver.FirefoxProfile()
         profile.set_preference('intl.accept_languages', 'en-US, en')
         return profile
+
+    def tarayiciChromeDilDegistir(self, options):
+        options.add_experimental_option('prefs', {'intl.accept_languages': 'en,en_US'})
+        return options
 
     def tarayiciPathAyarlari(self,durum=True):
         base_warnings = self.BASE_UYARI(metod=self.tarayiciPathAyarlari, warnings=True)
@@ -1827,7 +1860,7 @@ class Instagram():
                 return "languages.{dil}.warnings.{metod}.".format(dil=self.dil, metod=metod.__name__)
         except Exception as error:
             base_warnings = self.BASE_UYARI(metod=self.BASE_UYARI, warnings=True)
-            self.uyariOlustur(str(self.configGetir(base_warnings + "warning1")).format(hata=str(error)))
+            self.uyariOlustur(str(self.configGetir(base_warnings + "warning1")).format(hata=str(error)),2)
 
     def beklemeSuresiGetir(self, baslangic, bitis):
         return randint(baslangic, bitis)
